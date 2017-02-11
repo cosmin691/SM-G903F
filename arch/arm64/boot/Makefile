@@ -31,9 +31,6 @@ $(obj)/Image: vmlinux FORCE
 
 $(obj)/Image.gz: $(obj)/Image FORCE
 	$(call if_changed,gzip)
-	
-$(obj)/Image-dtb: vmlinux FORCE
-	$(call if_changed,objcopy)
 
 $(obj)/Image.gz-dtb: $(obj)/Image.gz $(DTB_OBJS) FORCE
 	$(call if_changed,cat)
