@@ -3,19 +3,25 @@
 ARCH=arm64
 CROSS_COMPILE=/home/wilmans2m/toolchains/google/bin/aarch64-linux-android-
 BUILD_KERNEL_DIR=$(pwd)
+DTOUT=$BUILD_KERNEL_DIR/arch/arm64/boot/dt.img
 DTSDIR=$BUILD_KERNEL_DIR/arch/arm64/boot/dts
+DTFILE=$BUILD_KERNEL_DIR/arch/arm64/boot/dtfiles
 
 FUNC_CLEAN_DTB()
 {
 	if ! [ -d $DTSDIR ] ; then
 		echo "no directory : "$DTSDIR""
 	else
-		echo "remove dtb files in : "$DTSDIR/*.dtb""
-		rm $DTSDIR/*.dtb
+		echo "remove built dts/dtb/dt.img files"
+		rm $DTOUT
 	fi
 }
 
-DTOUT=$BUILD_KERNEL_DIR/arch/arm64/boot/dt.img
+if ! [ -d $DTFILE ] ;
+then
+mkdir $DTFILE
+fi
+
 DTC=$BUILD_KERNEL_DIR/scripts/dtc/dtc
 DTSFILES="exynos7580-s5neo_rev00 exynos7580-s5neo_rev06 exynos7580-s5neo_rev07 exynos7580-s5neo_rev08 exynos7580-s5neo_rev09 exynos7580-s5neo_rev11"
 DTBTOOL=$BUILD_KERNEL_DIR/tools/dtbtool
@@ -32,9 +38,9 @@ FUNC_BUILD_DTB()
 
 	for dts in $DTSFILES; do
 		echo "=> Processing: ${dts}.dts"
-		"${CROSS_COMPILE}cpp" -nostdinc -undef -x assembler-with-cpp -I "$BUILD_KERNEL_DIR/include" "$DTSDIR/${dts}.dts" > "${dts}.dts"
+		"${CROSS_COMPILE}cpp" -nostdinc -undef -x assembler-with-cpp -I "$BUILD_KERNEL_DIR/include" "$DTSDIR/${dts}.dts" > "arch/arm64/boot/dtfiles/${dts}.dts"
 		echo "=> Generating: ${dts}.dtb"
-		$DTC -p $DTB_PADDING -i "$DTSDIR" -O dtb -o "${dts}.dtb" "${dts}.dts"
+		$DTC -p $DTB_PADDING -i "$DTSDIR" -O dtb -o "arch/arm64/boot/dtfiles/${dts}.dtb" "arch/arm64/boot/dtfiles/${dts}.dts"
 	done
 
 	echo ""
@@ -53,7 +59,7 @@ FUNC_BUILD_DTIMG()
 	echo ""
 
 	echo "Generating dt.img..."
-	$DTBTOOL -o $DTOUT -v -s $PAGE_SIZE -p ./scripts/dtc/ $BUILD_KERNEL_DIR/
+	$DTBTOOL -o $DTOUT -v -s $PAGE_SIZE -p ./scripts/dtc/ $DTFILE/
 
 	echo ""
 	echo "================================="
@@ -62,7 +68,7 @@ FUNC_BUILD_DTIMG()
 	echo ""
 }
 
-# MAIN FUNCTION
+# MAIN DT FUNCTION
 rm -rf ./build.log
 (
     START_TIME=`date +%s`
@@ -70,16 +76,12 @@ rm -rf ./build.log
 	FUNC_CLEAN_DTB
 	FUNC_BUILD_DTB
 	FUNC_BUILD_DTIMG
+	rm -rf $DTFILE
 
     END_TIME=`date +%s`
 
     echo "Total compile time is $ELAPSED_TIME seconds"
 ) 2>&1	| tee -a ./build.log
-
-# eliminate temp file in dts directory
-rm -rf $DTS/.*.tmp
-rm -rf $DTS/.*.cmd
-rm -rf $DTS/*.dtb
 
 # Calculate DTS size for all images and display on terminal output
 du -k "$DTOUT" | cut -f1 >sizT
