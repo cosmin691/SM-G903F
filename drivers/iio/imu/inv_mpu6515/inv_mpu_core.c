@@ -2055,6 +2055,8 @@ static ssize_t inv_flush_batch_show(struct device *dev,
 	result = inv_flush_batch_data(indio_dev, &has_data);
 	mutex_unlock(&indio_dev->mlock);
 
+	pr_info("[SENSOR] %s, has_data=%d, result=%d\n", __func__, has_data, result);
+
 	if (result)
 		return sprintf(buf, "%d\n", result);
 	else
@@ -4334,8 +4336,8 @@ static int inv_mpu_resume(struct device *dev)
 	int result;
 
 	/* add code according to different request Start */
-	pr_debug("%s inv_mpu_resume\n", st->hw->name);
-
+	pr_info("[SENSOR] %s, hw_name=%s, dmp_on=%d, enable=%d\n", __func__, 
+		st->hw->name, st->chip_config.dmp_on, st->chip_config.enable);
 
 	result = 0;
 	if (st->chip_config.dmp_on && st->chip_config.enable) {
@@ -4371,9 +4373,9 @@ static int inv_mpu_suspend(struct device *dev)
 	struct iio_dev *indio_dev = i2c_get_clientdata(to_i2c_client(dev));
 	struct inv_mpu_state *st = iio_priv(indio_dev);
 	int result;
-	u8 d =0;
 	/* add code according to different request Start */
-	pr_debug("%s inv_mpu_suspend\n", st->hw->name);
+	pr_info("[SENSOR] %s, hw_name=%s, dmp_on=%d, enable=%d\n", __func__, 
+		st->hw->name, st->chip_config.dmp_on, st->chip_config.enable);
 	disable_irq(st->client->irq);
 
 	result = 0;
